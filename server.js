@@ -173,4 +173,52 @@ app.post('/api/communities/:id/join', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* --- EVENTS --- */
+app.get('/api/events', async (req, res) => {
+    try {
+        const events = await prisma.event.findMany({
+            include: {
+                creator: { select: { name: true } },
+                community: { select: { name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(events);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/events', authenticateToken, async (req, res) => {
+    const { title, date, time, location, imageUrl, communityId } = req.body;
+    try {
+        const event = await prisma.event.create({
+            data: {
+                title,
+                date,
+                time,
+                location,
+                imageUrl,
+                creatorId: req.user.id,
+                communityId: communityId ? parseInt(communityId) : null
+            },
+            include: {
+                creator: { select: { name: true } },
+                community: { select: { name: true } }
+            }
+        });
+        res.json(event);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/events/:id', authenticateToken, async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+        const event = await prisma.event.findUnique({ where: { id } });
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+        if (event.creatorId !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
+
+        await prisma.event.delete({ where: { id } });
+        res.json({ message: 'Event deleted' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));

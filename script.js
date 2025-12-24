@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCommunities();
     }
 
+    if (document.querySelector('.events-list')) {
+        loadEvents();
+    }
+
     if (window.location.pathname.includes('blog-post.html')) {
         loadSinglePost();
     }
@@ -903,6 +907,50 @@ function closeCreateCommunityModal() {
 
 
 /* --- EVENTS LOGIC --- */
+async function loadEvents() {
+    const container = document.querySelector('.events-list');
+    if (!container) return;
+
+    // Loading State
+    container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⏳</div>
+            <p style="color: var(--text-light);">Loading events...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`${API_URL}/events`);
+        const events = await res.json();
+
+        if (events.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No upcoming events yet.</p>';
+            return;
+        }
+
+        container.innerHTML = events.map(event => {
+            const eventDate = new Date(event.date);
+            const formattedDate = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            return `
+            <div class="event-card">
+                <img src="${event.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&w=400&q=80'}" 
+                     class="event-image" alt="${event.title}">
+                <div class="event-details">
+                    <h4>${event.title}</h4>
+                    <div class="event-meta">
+                        <span>📅 ${formattedDate} • ${event.time}</span>
+                        <span>📍 ${event.location}${event.community ? ' • ' + event.community.name : ''}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p style="text-align: center; color: red; padding: 2rem;">Error loading events</p>';
+    }
+}
+
 function openCreateEventModal() {
     if (!localStorage.getItem('token')) return showToast('Please login', 'info');
     const modal = document.getElementById('create-event-modal');
@@ -916,53 +964,63 @@ function closeCreateEventModal() {
     setTimeout(() => modal.style.display = 'none', 300);
 }
 
-function handleCreateEvent(e) {
+async function handleCreateEvent(e) {
     e.preventDefault();
+
+    if (!localStorage.getItem('token')) return showToast('Please login', 'info');
 
     // Gather Data
     const title = document.getElementById('event-title').value;
     const date = document.getElementById('event-date').value;
     const time = document.getElementById('event-time').value;
-    const place = document.getElementById('event-place').value;
+    const location = document.getElementById('event-place').value;
     const imageUrl = currentEventImageBase64 || '';
 
-    // Simulate API Call
-    showToast('Creating Event...', 'info');
+    if (!title || !date || !time || !location) {
+        return showToast('Please fill all required fields', 'error');
+    }
 
-    // In a real app, POST to /api/events
-    setTimeout(() => {
-        showToast('Event created successfully!', 'success');
-        closeCreateEventModal();
-        e.target.reset();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerText;
+    submitBtn.innerText = 'Creating...';
+    submitBtn.disabled = true;
 
-        // Reset image preview
-        const preview = document.getElementById('event-image-preview');
-        if (preview) preview.style.display = 'none';
-        const uploadText = document.querySelector('#event-file-upload-area .file-upload-text');
-        if (uploadText) uploadText.style.display = 'block';
-        currentEventImageBase64 = null;
+    try {
+        const res = await fetch(`${API_URL}/events`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ title, date, time, location, imageUrl })
+        });
 
-        // Optimistically add to list (Optional, but user asked for "show beautiful ui box")
-        // We'll append it to the events list if we want, but for now just Toast is fine as per MVP.
+        if (res.ok) {
+            const event = await res.json();
+            showToast('Event created successfully!', 'success');
+            closeCreateEventModal();
+            e.target.reset();
 
-        // Let's actually append it to the UI!
-        const list = document.querySelector('.events-list');
-        if (list) {
-            const newEventHTML = `
-            <div class="event-card">
-                 <img src="${imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&w=400&q=80'}" class="event-image">
-                <div class="event-details">
-                    <h4>${title}</h4>
-                    <div class="event-meta">
-                        <span>📅 ${new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${time}</span>
-                        <span>📍 ${place}</span>
-                    </div>
-                </div>
-            </div>`;
-            list.insertAdjacentHTML('afterbegin', newEventHTML);
+            // Reset image preview
+            const preview = document.getElementById('event-image-preview');
+            if (preview) preview.style.display = 'none';
+            const uploadText = document.querySelector('#event-file-upload-area .file-upload-text');
+            if (uploadText) uploadText.style.display = 'block';
+            currentEventImageBase64 = null;
+
+            // Reload events
+            loadEvents();
+        } else {
+            const data = await res.json();
+            showToast(data.message || 'Failed to create event', 'error');
         }
-
-    }, 1000);
+    } catch (err) {
+        console.error(err);
+        showToast('Error creating event', 'error');
+    } finally {
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+    }
 }
 
 /* --- BLOG MODAL (Existing) --- */

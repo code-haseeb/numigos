@@ -114,6 +114,105 @@ async function main() {
     });
     console.log('Seeded blogs and comments');
 
+    // 4. Create Upcoming Events
+    const event1 = await prisma.event.create({
+        data: {
+            title: 'Winter Coding Bootcamp 2024',
+            date: '2024-12-28',
+            time: '10:00 AM',
+            location: 'Computer Lab 4',
+            imageUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user2.id,
+            communityId: comm1.id
+        }
+    });
+
+    const event2 = await prisma.event.create({
+        data: {
+            title: 'AI & Machine Learning Workshop',
+            date: '2024-12-30',
+            time: '02:00 PM',
+            location: 'Main Auditorium',
+            imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user2.id,
+            communityId: comm4.id
+        }
+    });
+
+    const event3 = await prisma.event.create({
+        data: {
+            title: 'New Year Cultural Night',
+            date: '2024-12-31',
+            time: '06:00 PM',
+            location: 'University Grounds',
+            imageUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user1.id,
+            communityId: comm3.id
+        }
+    });
+
+    const event4 = await prisma.event.create({
+        data: {
+            title: 'Photography Exhibition Opening',
+            date: '2025-01-05',
+            time: '05:00 PM',
+            location: 'Arts Gallery, Building C',
+            imageUrl: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user1.id,
+            communityId: comm2.id
+        }
+    });
+
+    const event5 = await prisma.event.create({
+        data: {
+            title: 'Robotics Competition 2025',
+            date: '2025-01-10',
+            time: '09:00 AM',
+            location: 'Engineering Workshop',
+            imageUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user2.id,
+            communityId: comm4.id
+        }
+    });
+
+    const event6 = await prisma.event.create({
+        data: {
+            title: 'Career Fair 2025',
+            date: '2025-01-15',
+            time: '10:00 AM',
+            location: 'Sports Complex',
+            imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user1.id,
+            communityId: null
+        }
+    });
+
+    const event7 = await prisma.event.create({
+        data: {
+            title: 'Web Development Masterclass',
+            date: '2025-01-18',
+            time: '03:00 PM',
+            location: 'Lab 3, CS Building',
+            imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user2.id,
+            communityId: comm1.id
+        }
+    });
+
+    const event8 = await prisma.event.create({
+        data: {
+            title: 'Traditional Food Festival',
+            date: '2025-01-20',
+            time: '12:00 PM',
+            location: 'Main Cafeteria',
+            imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&w=800&q=80',
+            creatorId: user1.id,
+            communityId: comm3.id
+        }
+    });
+
+    console.log('Seeded 8 upcoming events');
+
     console.log('Seeding finished.');
 }
 

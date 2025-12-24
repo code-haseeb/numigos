@@ -18,6 +18,7 @@ model User {
   comments     Comment[]
   createdCommunities Community[] @relation("CreatedCommunities")
   joinedCommunities  Community[] @relation("UserCommunities")
+  createdEvents      Event[]     @relation("CreatedEvents")
 }
 
 model Post {
@@ -57,4 +58,21 @@ model Community {
   creator     User     @relation("CreatedCommunities", fields: [creatorId], references: [id])
   
   members     User[]   @relation("UserCommunities")
+  events      Event[]
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  date        String
+  time        String
+  location    String
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  
+  creatorId   Int
+  creator     User     @relation("CreatedEvents", fields: [creatorId], references: [id])
+  
+  communityId Int?
+  community   Community? @relation(fields: [communityId], references: [id])
 }
