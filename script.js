@@ -131,32 +131,55 @@ function showToast(message, type = 'info') {
 }
 
 function updateNavbarAuth() {
+    const rawUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
-    const navLinks = document.querySelector('.nav-links');
+    const user = rawUser ? safeParseJSON(rawUser) : null;
+    const isLoggedIn = Boolean(token && user);
+    const navLists = document.querySelectorAll('.nav-links');
 
-    if (token && user) {
-        // Remove Login/Signup links
-        const authLinks = navLinks.querySelectorAll('a[href="login.html"], a[href="signup.html"]');
-        authLinks.forEach(el => el.remove());
+    navLists.forEach(nav => {
+        if (!nav) return;
 
-        // Add User Name + Logout
-        if (!document.getElementById('nav-user-section')) {
-            const div = document.createElement('div');
-            div.id = 'nav-user-section';
-            div.innerHTML = `
-                <span style="font-weight: 600; color: #1F2937;">${user.name}</span>
-                <button onclick="logout()" class="btn btn-outline" style="border-radius: 20px; font-size: 0.85rem; padding: 0.4rem 1rem;">Logout</button>
-             `;
-            navLinks.appendChild(div);
+        // Remove any existing auth-related nodes before rebuilding them.
+        nav.querySelectorAll('[data-auth-item]').forEach(el => el.remove());
+        nav.querySelectorAll('.nav-user-section').forEach(el => el.remove());
+
+        if (isLoggedIn && user) {
+            const userSection = document.createElement('div');
+            userSection.className = 'nav-user-section';
+            userSection.setAttribute('data-auth-item', 'true');
+            userSection.innerHTML = `
+                <span style="font-weight: 600; color: #1F2937;">${user.name || 'User'}</span>
+                <button class="btn btn-outline" style="border-radius: 20px; font-size: 0.85rem; padding: 0.4rem 1rem; margin-left: 0.5rem;" onclick="logout()">Logout</button>
+            `;
+            nav.appendChild(userSection);
+        } else {
+            const loginLink = document.createElement('a');
+            loginLink.href = 'login.html';
+            loginLink.textContent = 'Login';
+            loginLink.setAttribute('data-auth-item', 'true');
+
+            const signupLink = document.createElement('a');
+            signupLink.href = 'signup.html';
+            signupLink.className = 'btn btn-primary';
+            signupLink.textContent = 'Sign Up';
+            signupLink.setAttribute('data-auth-item', 'true');
+
+            nav.appendChild(loginLink);
+            nav.appendChild(signupLink);
         }
-    }
+    });
+}
+
+function safeParseJSON(value) {
+    try { return JSON.parse(value); } catch (e) { console.warn('Failed to parse JSON from storage', e); return null; }
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('isLoggedIn');
+    updateNavbarAuth();
     showToast('Logged out successfully', 'info');
     setTimeout(() => window.location.href = 'index.html', 1000);
 }
@@ -178,6 +201,8 @@ async function handleLogin(e) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('isLoggedIn', 'true');
+
+            updateNavbarAuth();
 
             showToast('Login successful! Redirecting...', 'success');
             setTimeout(() => window.location.href = 'index.html', 1500);
