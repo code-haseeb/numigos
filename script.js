@@ -86,6 +86,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Event Image Upload Logic
+    const eventFileArea = document.getElementById('event-file-upload-area');
+    const eventFileInput = document.getElementById('event-image-file');
+    if (eventFileArea && eventFileInput) {
+        eventFileArea.addEventListener('click', () => eventFileInput.click());
+        eventFileInput.addEventListener('change', handleEventFileSelect);
+
+        // Drag and drop
+        eventFileArea.addEventListener('dragover', (e) => { e.preventDefault(); eventFileArea.style.borderColor = '#F97316'; });
+        eventFileArea.addEventListener('dragleave', (e) => { e.preventDefault(); eventFileArea.style.borderColor = '#D1D5DB'; });
+        eventFileArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            eventFileArea.style.borderColor = '#D1D5DB';
+            if (e.dataTransfer.files.length) {
+                eventFileInput.files = e.dataTransfer.files;
+                handleEventFileSelect({ target: eventFileInput });
+            }
+        });
+    }
 });
 
 /* --- UI HELPERS --- */
@@ -221,6 +241,24 @@ function handleCommFileSelect(e) {
             preview.src = currentCommImageBase64;
             preview.style.display = 'block';
             const uploadText = document.querySelector('#comm-file-upload-area .file-upload-text');
+            if (uploadText) uploadText.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Event Image handling
+let currentEventImageBase64 = null;
+function handleEventFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+            currentEventImageBase64 = evt.target.result;
+            const preview = document.getElementById('event-image-preview');
+            preview.src = currentEventImageBase64;
+            preview.style.display = 'block';
+            const uploadText = document.querySelector('#event-file-upload-area .file-upload-text');
             if (uploadText) uploadText.style.display = 'none';
         };
         reader.readAsDataURL(file);
@@ -861,8 +899,7 @@ function handleCreateEvent(e) {
     const date = document.getElementById('event-date').value;
     const time = document.getElementById('event-time').value;
     const place = document.getElementById('event-place').value;
-    const imgObj = document.getElementById('event-img');
-    const imageUrl = imgObj ? imgObj.value : '';
+    const imageUrl = currentEventImageBase64 || '';
 
     // Simulate API Call
     showToast('Creating Event...', 'info');
@@ -872,6 +909,13 @@ function handleCreateEvent(e) {
         showToast('Event created successfully!', 'success');
         closeCreateEventModal();
         e.target.reset();
+
+        // Reset image preview
+        const preview = document.getElementById('event-image-preview');
+        if (preview) preview.style.display = 'none';
+        const uploadText = document.querySelector('#event-file-upload-area .file-upload-text');
+        if (uploadText) uploadText.style.display = 'block';
+        currentEventImageBase64 = null;
 
         // Optimistically add to list (Optional, but user asked for "show beautiful ui box")
         // We'll append it to the events list if we want, but for now just Toast is fine as per MVP.
